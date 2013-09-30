@@ -24,6 +24,52 @@
  THE SOFTWARE.
  ****************************************************************************/
 
+var MenuLayer = cc.Layer.extend({
+    init: function(){
+        this._super();
+        // bkg png
+        var size = cc.Director.getInstance().getWinSize();
+        var bkg = cc.Sprite.create(s_menuBkg);
+        bkg.setAnchorPoint(cc.p(0.5, 0.5));
+        bkg.setPosition(cc.p(size.width / 2, size.height / 2));
+        this.addChild(bkg);
+
+        // menu
+
+        var newGameNormal = cc.Sprite.create(s_menu, cc.rect(0, 0, 126, 33));
+        var newGameSelected = cc.Sprite.create(s_menu, cc.rect(0, 33, 126, 33));
+        var newGameDisabled = cc.Sprite.create(s_menu, cc.rect(0, 33 * 2, 126, 33));
+
+        var gameSettingsNormal = cc.Sprite.create(s_menu, cc.rect(126, 0, 126, 33));
+        var gameSettingsSelected = cc.Sprite.create(s_menu, cc.rect(126, 33, 126, 33));
+        var gameSettingsDisabled = cc.Sprite.create(s_menu, cc.rect(126, 33 * 2, 126, 33));
+
+        var aboutNormal = cc.Sprite.create(s_menu, cc.rect(252, 0, 126, 33));
+        var aboutSelected = cc.Sprite.create(s_menu, cc.rect(252, 33, 126, 33));
+        var aboutDisabled = cc.Sprite.create(s_menu, cc.rect(252, 33 * 2, 126, 33));
+
+        var newGame = cc.MenuItemSprite.create(newGameNormal, newGameSelected, newGameDisabled,this.onNewGame);
+        
+        var gameSettings = cc.MenuItemSprite.create(gameSettingsNormal, gameSettingsSelected, gameSettingsDisabled, this.onSettings, this);
+        var about = cc.MenuItemSprite.create(aboutNormal, aboutSelected, aboutDisabled, this.onAbout, this);
+
+        var menu = cc.Menu.create(newGame, gameSettings, about);
+        menu.alignItemsVerticallyWithPadding(10);
+        this.addChild(menu, 1, 2);
+        menu.setPosition(size.width / 2, size.height / 2 - 80);
+        this.schedule(this.update, 0.1);
+    }
+});
+
+var MenuScene = cc.Scene.extend({
+    onEnter: function(){
+        this._super();
+        var layer = new MenuLayer;
+        layer.init();
+        this.addChild(layer);
+    }
+})
+
 var MyLayer = cc.Layer.extend({
     isMouseDown:false,
     helloImg:null,
