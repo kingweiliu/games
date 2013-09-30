@@ -25,15 +25,39 @@
  ****************************************************************************/
 
 var BallLayer = cc.Layer.extend({
+    ball:null, 
+
     init:function(){
         this._super();
-        var ball = cc.Sprite.create(s_ball);
+        this.setTouchEnabled(true);
+
+        this.ball = cc.Sprite.create(s_ball);
         var size = cc.Director.getInstance().getWinSize();
        
-        ball.setAnchorPoint(cc.p(0.5, 0.5));
-        ball.setPosition(cc.p(size.width / 2, size.height / 2));
-        this.addChild(ball);
+        this.ball.setAnchorPoint(cc.p(0.5, 0.5));
+        this.ball.setPosition(cc.p(size.width / 2, size.height / 2));
+        this.addChild(this.ball, 2);
+
+        var board = cc.Sprite.create(s_board);
+        board.setAnchorPoint(cc.p(0.5, 0.5));
+        board.setPosition(cc.p(size.width / 2, size.height / 2));
+        this.addChild(board, 1);
+    },
+
+    onTouchesMoved : function(pnt){
+        console.log('onTouchesMoved' + JSON.stringify(pnt));
+    },
+
+    onTouchesBegan:function(pnt){
+        console.log('onTouchesBegan');
+    },
+    onTouchesEnded:function(pnt){
+        console.log('onTouchesEnded');
+        this.ball.setPosition(pnt[0].getLocation());
     }
+
+
+
 });
 
 BallLayer.create = function(){;
