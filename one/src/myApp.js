@@ -24,6 +24,28 @@
  THE SOFTWARE.
  ****************************************************************************/
 
+var BallLayer = cc.Layer.extend({
+    init:function(){
+        this._super();
+        var ball = cc.Sprite.create(s_ball);
+        var size = cc.Director.getInstance().getWinSize();
+       
+        ball.setAnchorPoint(cc.p(0.5, 0.5));
+        ball.setPosition(cc.p(size.width / 2, size.height / 2));
+        this.addChild(ball);
+    }
+});
+
+BallLayer.create = function(){;
+    var scene = cc.Scene.create();
+    var ballLayer =new BallLayer; 
+    scene.addChild(ballLayer);
+    ballLayer.init();
+
+    return scene;
+}
+
+
 var MenuLayer = cc.Layer.extend({
     init: function(){
         this._super();
@@ -58,6 +80,11 @@ var MenuLayer = cc.Layer.extend({
         this.addChild(menu, 1, 2);
         menu.setPosition(size.width / 2, size.height / 2 - 80);
         this.schedule(this.update, 0.1);
+    },
+
+    onNewGame : function(){
+        
+        cc.Director.getInstance().replaceScene(BallLayer.create());
     }
 });
 
