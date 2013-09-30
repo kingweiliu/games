@@ -53,10 +53,11 @@ var BallLayer = cc.Layer.extend({
     },
     onTouchesEnded:function(pnt){
         console.log('onTouchesEnded');
-        this.ball.setPosition(pnt[0].getLocation());
+        var action = cc.MoveTo.create(0.5, pnt[0].getLocation(), function(){
+            this.ball.setPosition(pnt[0].getLocation());
+        });
+        this.ball.runAction(action);        
     }
-
-
 
 });
 
