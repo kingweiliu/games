@@ -23,12 +23,114 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
+function Game(){
+    this.CHESSCLASS=7;
+    this.ROWCELLCOUNT=9;
+
+    this.chesses= new Array;
+    this.unsetPos=new Array;
+    for(var i=0; i<9;++i){
+        this.chesses[i]=new Array;
+        for(var j=0;j<9;++j){
+            this.chesses[i][j] = new Object;
+            this.chesses[i][j].class = 0;
+            this.chesses[i][j].x = i;
+            this.chesses[i][j].y = j;            
+            this.unsetPos.push(this.chesses[i][j]);
+        }
+    }
+    
+    
+    this.logic=null;
+    this.state=null; 
+    return this;
+}
+
+Game.prototype.init=function(logic){
+        this.logic = logic;
+        this.genNextChess();
+    }
+
+
+Game.prototype.genNextChess= function(){
+        var poses = new Array;
+        if (this.unsetPos.length < 3) {
+            return false; // game over
+        };
+
+        for(var i=0; i<3;++i){
+            var idx = Math.floor(Math.random()* this.unsetPos.length);
+            poses.push(this.chesses[this.unsetPos[idx].x][this.unsetPos[idx].y]);
+            this.unsetPos[idx] = this.unsetPos.pop();
+        }
+        for (var i = 0; i <3; i++) {
+            this.chesses[poses[i].x][poses[i].y] =  Math.floor(Math.random()*this.CHESSCLASS);            
+        };
+        this.logic.afterGenChess(poses); 
+    }
+
+//     //validate the input
+// Game.prototype.calcResult: function(pnt){
+//         var arrFinded = new Array;
+
+//         //验证水平
+//         var hStart = pnt.x-5 <0 ? 0 : pnt.x-5;
+//         var hEnd = pnt.x + 5 > 8 ? 8 : pnt.x + 5;
+
+//         var hCnt = 0;
+//         var i = 0, j=0;
+//         for(i = pnt.x-1; i > 0; --i){
+//             if (chesses[i][pnt.y] != chesses[pnt.x][pnt.y]) {
+//                 break;
+//             }
+//             ++hCnt;
+//         }
+//         for(j=pnt.x+1; j<ROWCELLCOUNT;++j){
+//             if (chesses[j][pnt.y] != chesses[pnt.x][pnt.y]) {
+//                 break;
+//             }
+//             ++hCnt;
+//         }
+//         if (hCnt>4) { //水平OK
+//             for (var k = i+1; k < j; ++k) {
+//                 arrFinded.push({'x':k, 'y':pnt.y});
+//             }
+//         }
+
+//         //验证竖直        
+//         hCnt = 0;
+//         for(i = pnt.y -1; i>0; --j){
+//             if (chesses[pnt.x][i] != chesses[pnt.x][pnt.y]) {
+//                 break;
+//             }
+//             ++hCnt;
+//         }
+//         for(j=pnt.y+1; j<ROWCELLCOUNT;++j){
+//             if (chesses[pnt.x][j] != chesses[pnt.x][pnt.y]) {
+//                 break;
+//             }
+//             ++hCnt;
+//         }
+//         if (hCnt>4) { //水平OK
+//             for (var k = i+1; k < j; ++k) {
+//                 arrFinded.push({'x':pnt.x, 'y':k});
+//             }
+//         }
+//         ////////////////////////////////////////////////////        
+//         if (arrFinded.length>0) {
+//             logic.onHit(arrFinded);  // 命中时回调logic的接口 
+//         };
+//     }
 
 var BallLayer = cc.Layer.extend({
     ball:null, 
+    game:null,
 
     init:function(){
         this._super();
+
+        this.game = new Game;
+        this.game.init(this);
         this.setTouchEnabled(true);
 
         this.ball = cc.Sprite.create(s_ball);
@@ -57,6 +159,17 @@ var BallLayer = cc.Layer.extend({
             this.ball.setPosition(pnt[0].getLocation());
         });
         this.ball.runAction(action);        
+    },
+
+    // logic interface
+    afterGenChess: function(poses){
+        for (var i = 0; i < poses.length; i++) {
+            poses[i].data = cc.LabelTTF.create(""+poses[i].class, "Impact", 38);
+        // position the label on the center of the screen
+        poses[i].data.setPosition(cc.p(50* poses[i].x, 50* poses[i].y));
+        // add the label as a child to this layer
+        this.addChild(poses[i].data, 5);
+        };
     }
 
 });
