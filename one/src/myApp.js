@@ -43,6 +43,7 @@ function Game(){
     
     this.logic=null;
     this.state=null; 
+    this.currentChessPos = null;
     return this;
 }
 
@@ -59,68 +60,114 @@ Game.prototype.genNextChess= function(){
         };
 
         for(var i=0; i<3;++i){
-            var idx = Math.floor(Math.random()* this.unsetPos.length);
+            var idx = Math.floor(Math.random()* (this.unsetPos.length-1));
             poses.push(this.chesses[this.unsetPos[idx].x][this.unsetPos[idx].y]);
+            console.log("idx:"+idx +", length:"+this.unsetPos.length);
             this.unsetPos[idx] = this.unsetPos.pop();
         }
         for (var i = 0; i <3; i++) {
-            this.chesses[poses[i].x][poses[i].y] =  Math.floor(Math.random()*this.CHESSCLASS);            
+            this.chesses[poses[i].x][poses[i].y].class =  Math.floor(Math.random()*this.CHESSCLASS+1);            
         };
         this.logic.afterGenChess(poses); 
     }
 
-//     //validate the input
-// Game.prototype.calcResult: function(pnt){
-//         var arrFinded = new Array;
+//判断指定位置是否有棋子
+Game.prototype.chessClass=function(c, r){
+    try{
+    return this.chesses[c][r].class;    
+    }
+    catch(e){
+        alert(e.stack);
+    }
+}
 
-//         //验证水平
-//         var hStart = pnt.x-5 <0 ? 0 : pnt.x-5;
-//         var hEnd = pnt.x + 5 > 8 ? 8 : pnt.x + 5;
+//设置当前的棋子
+Game.prototype.selectChess = function(c, r){
+    if (this.chesses[c][r].class ==0) 
+        return;
+    this.currentChessPos = this.chesses[c][r];
+    this.logic.onCurrentPosChanged(this.currentChessPos);
+}
 
-//         var hCnt = 0;
-//         var i = 0, j=0;
-//         for(i = pnt.x-1; i > 0; --i){
-//             if (chesses[i][pnt.y] != chesses[pnt.x][pnt.y]) {
-//                 break;
-//             }
-//             ++hCnt;
-//         }
-//         for(j=pnt.x+1; j<ROWCELLCOUNT;++j){
-//             if (chesses[j][pnt.y] != chesses[pnt.x][pnt.y]) {
-//                 break;
-//             }
-//             ++hCnt;
-//         }
-//         if (hCnt>4) { //水平OK
-//             for (var k = i+1; k < j; ++k) {
-//                 arrFinded.push({'x':k, 'y':pnt.y});
-//             }
-//         }
+Game.prototype.hasSelect = function(){
+    return this.currentChessPos != null;
+}
 
-//         //验证竖直        
-//         hCnt = 0;
-//         for(i = pnt.y -1; i>0; --j){
-//             if (chesses[pnt.x][i] != chesses[pnt.x][pnt.y]) {
-//                 break;
-//             }
-//             ++hCnt;
-//         }
-//         for(j=pnt.y+1; j<ROWCELLCOUNT;++j){
-//             if (chesses[pnt.x][j] != chesses[pnt.x][pnt.y]) {
-//                 break;
-//             }
-//             ++hCnt;
-//         }
-//         if (hCnt>4) { //水平OK
-//             for (var k = i+1; k < j; ++k) {
-//                 arrFinded.push({'x':pnt.x, 'y':k});
-//             }
-//         }
-//         ////////////////////////////////////////////////////        
-//         if (arrFinded.length>0) {
-//             logic.onHit(arrFinded);  // 命中时回调logic的接口 
-//         };
-//     }
+Game.prototype.moveChess = function(c, r){
+    if (this.currentChessPos != null) {
+        this.logic.onBeforeMoveChess(this.currentChessPos, this.chesses[c][r], function(){
+            this.chesses[c][r].class = this.chesses[this.currentChessPos.x][this.currentChessPos.y].class;
+            this.chesses[this.currentChessPos.x][this.currentChessPos.y].class = 0;
+            //从未设置棋子集合移出
+            for(var i = 0; i<this.unsetPos.length; ++i){
+                if (this.unsetPos[i].x == c && this.unsetPos[i].y == r) {
+                    this.unsetPos[i] = this.chesses[this.currentChessPos.x][this.currentChessPos.y];
+                    break;
+                };
+            }
+            //this.unsetPos.push(this.currentChessPos);
+            this.currentChessPos = null;
+            this.genNextChess();
+        });
+        
+    };
+
+}
+
+    //validate the input
+Game.prototype.calcResult = function(pnt){
+        var arrFinded = new Array;
+
+        //验证水平
+        var hStart = pnt.x-5 <0 ? 0 : pnt.x-5;
+        var hEnd = pnt.x + 5 > 8 ? 8 : pnt.x + 5;
+
+        var hCnt = 0;
+        var i = 0, j=0;
+        for(i = pnt.x-1; i > 0; --i){
+            if (chesses[i][pnt.y] != chesses[pnt.x][pnt.y]) {
+                break;
+            }
+            ++hCnt;
+        }
+        // for(j=pnt.x+1; j<ROWCELLCOUNT;++j){
+        //     if (chesses[j][pnt.y] != chesses[pnt.x][pnt.y]) {
+        //         break;
+        //     }
+        //     ++hCnt;
+        // }
+        // if (hCnt>4) { //水平OK
+        //     for (var k = i+1; k < j; ++k) {
+        //         arrFinded.push({'x':k, 'y':pnt.y});
+        //     }
+        // }
+
+        // //验证竖直        
+        // hCnt = 0;
+        // for(i = pnt.y -1; i>0; --j){
+        //     if (chesses[pnt.x][i] != chesses[pnt.x][pnt.y]) {
+        //         break;
+        //     }
+        //     ++hCnt;
+        // }
+        // for(j=pnt.y+1; j<ROWCELLCOUNT;++j){
+        //     if (chesses[pnt.x][j] != chesses[pnt.x][pnt.y]) {
+        //         break;
+        //     }
+        //     ++hCnt;
+        // }
+        // if (hCnt>4) { //水平OK
+        //     for (var k = i+1; k < j; ++k) {
+        //         arrFinded.push({'x':pnt.x, 'y':k});
+        //     }
+        // }
+        // ////////////////////////////////////////////////////        
+        // if (arrFinded.length>0) {
+        //     logic.onHit(arrFinded);  // 命中时回调logic的接口 
+        // };
+    }
+
+var CELLSIZE = 53;
 
 var BallLayer = cc.Layer.extend({
     ball:null, 
@@ -147,18 +194,35 @@ var BallLayer = cc.Layer.extend({
     },
 
     onTouchesMoved : function(pnt){
-        console.log('onTouchesMoved' + JSON.stringify(pnt));
+//        console.log('onTouchesMoved' + JSON.stringify(pnt));
     },
 
     onTouchesBegan:function(pnt){
-        console.log('onTouchesBegan');
+  //      console.log('onTouchesBegan');
+        
+        var bPos = this.posToChessBoard(pnt[0].getLocation().x, pnt[0].getLocation().y);
+        if (bPos.c <0 || bPos.c >8 || bPos.r<0 || bPos.r >8) {
+            return;
+        };
+        if (this.game.chessClass(bPos.c, bPos.r) != 0) {
+            this.game.selectChess(bPos.c, bPos.r);
+        }
+        else{
+            if (this.game.hasSelect()) {  //移动
+                this.game.moveChess(bPos.c, bPos.r);
+            };
+        }
+
+        console.log('onTouchesMoved' + bPos.r +" c: "+ bPos.r);
     },
     onTouchesEnded:function(pnt){
-        console.log('onTouchesEnded');
-        var action = cc.MoveTo.create(0.5, pnt[0].getLocation(), function(){
-            this.ball.setPosition(pnt[0].getLocation());
-        });
-        this.ball.runAction(action);        
+    //    console.log('onTouchesEnded');
+        // var action = cc.MoveTo.create(0.5, pnt[0].getLocation(), function(){
+        //     this.ball.setPosition(pnt[0].getLocation());
+        // });
+        // this.ball.runAction(action);    
+
+
     },
 
     // logic interface
@@ -166,11 +230,33 @@ var BallLayer = cc.Layer.extend({
         for (var i = 0; i < poses.length; i++) {
             poses[i].data = cc.LabelTTF.create(""+poses[i].class, "Impact", 38);
         // position the label on the center of the screen
-        poses[i].data.setPosition(cc.p(50* poses[i].x, 50* poses[i].y));
+        poses[i].data.setPosition(cc.p(53* poses[i].x+26, 53* poses[i].y+26));
         // add the label as a child to this layer
         this.addChild(poses[i].data, 5);
         };
-    }
+    },
+
+    onCurrentPosChanged:function(){
+
+    },
+
+    onBeforeMoveChess:function(chessOld, chessNew, callback){        
+        var action = cc.MoveTo.create(0.5, cc.p(chessNew.x*53 +26, chessNew.y*53+26));
+        chessOld.data.runAction(action);  
+        chessNew.data = chessOld.data;
+        chessOld.data = null;
+        callback.call(this.game);
+    },
+
+    //helper function
+    posToChessBoard: function(x, y){
+        var boardPos = new Object;
+        boardPos.c = Math.floor(x / CELLSIZE);
+        boardPos.r = Math.floor(y / CELLSIZE);
+        return boardPos;
+    },
+
+
 
 });
 
