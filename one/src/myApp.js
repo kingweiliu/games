@@ -98,6 +98,9 @@ Game.prototype.moveChess = function(c, r){
         this.logic.onBeforeMoveChess(this.currentChessPos, this.chesses[c][r], function(){
             this.chesses[c][r].class = this.chesses[this.currentChessPos.x][this.currentChessPos.y].class;
             this.chesses[this.currentChessPos.x][this.currentChessPos.y].class = 0;
+
+            
+
             //从未设置棋子集合移出
             for(var i = 0; i<this.unsetPos.length; ++i){
                 if (this.unsetPos[i].x == c && this.unsetPos[i].y == r) {
@@ -107,10 +110,17 @@ Game.prototype.moveChess = function(c, r){
             }
             //this.unsetPos.push(this.currentChessPos);
             this.currentChessPos = null;
-            this.genNextChess();
+            //判断移动的棋子是否应该触发消除
+            if(!this.calcResult(this.chesses[c][r])) //只有未消除时 产生下一组棋子
+                this.genNextChess();
         });
         
     };
+
+}
+
+//获取从当前位置到目标位置的路径
+Game.prototype.getMovePath = function(){
 
 }
 
@@ -125,52 +135,58 @@ Game.prototype.calcResult = function(pnt){
         var hCnt = 0;
         var i = 0, j=0;
         for(i = pnt.x-1; i > 0; --i){
-            if (chesses[i][pnt.y] != chesses[pnt.x][pnt.y]) {
+            if (this.chesses[i][pnt.y].class != this.chesses[pnt.x][pnt.y].class) {
                 break;
             }
             ++hCnt;
         }
-        // for(j=pnt.x+1; j<ROWCELLCOUNT;++j){
-        //     if (chesses[j][pnt.y] != chesses[pnt.x][pnt.y]) {
-        //         break;
-        //     }
-        //     ++hCnt;
-        // }
-        // if (hCnt>4) { //水平OK
-        //     for (var k = i+1; k < j; ++k) {
-        //         arrFinded.push({'x':k, 'y':pnt.y});
-        //     }
-        // }
+        for(j=pnt.x+1; j<this.ROWCELLCOUNT;++j){
+            if (this.chesses[j][pnt.y].class != this.chesses[pnt.x][pnt.y].class) {
+                break;
+            }
+            ++hCnt;
+        }
+        if (hCnt>=4) { //水平OK
+            for (var k = i+1; k < j; ++k) {
+                arrFinded.push(this.chesses[k][pnt.y]);
+            }
+        }
 
-        // //验证竖直        
-        // hCnt = 0;
-        // for(i = pnt.y -1; i>0; --j){
-        //     if (chesses[pnt.x][i] != chesses[pnt.x][pnt.y]) {
-        //         break;
-        //     }
-        //     ++hCnt;
-        // }
-        // for(j=pnt.y+1; j<ROWCELLCOUNT;++j){
-        //     if (chesses[pnt.x][j] != chesses[pnt.x][pnt.y]) {
-        //         break;
-        //     }
-        //     ++hCnt;
-        // }
-        // if (hCnt>4) { //水平OK
-        //     for (var k = i+1; k < j; ++k) {
-        //         arrFinded.push({'x':pnt.x, 'y':k});
-        //     }
-        // }
-        // ////////////////////////////////////////////////////        
-        // if (arrFinded.length>0) {
-        //     logic.onHit(arrFinded);  // 命中时回调logic的接口 
-        // };
+        //验证竖直        
+        hCnt = 0;
+        for(i = pnt.y -1; i>0; --i){
+            if (this.chesses[pnt.x][i].class != this.chesses[pnt.x][pnt.y].class) {
+                break;
+            }
+            ++hCnt;
+        }
+        for(j=pnt.y+1; j<this.ROWCELLCOUNT;++j){
+            if (this.chesses[pnt.x][j].class != this.chesses[pnt.x][pnt.y].class) {
+                break;
+            }
+            ++hCnt;
+        }
+        if (hCnt>=4) { //水平OK
+            for (var k = i+1; k < j; ++k) {
+                arrFinded.push(this.chesses[pnt.x][k]);
+            }
+        }
+        ////////////////////////////////////////////////////        
+        if (arrFinded.length>0) {
+            //标示要消除的棋子
+            for (var i = 0; i < arrFinded.length; i++) {
+                arrFinded[i].class = 0;
+            };
+            this.logic.onHit(arrFinded);  // 命中时回调logic的接口 
+        };
+
+        return arrFinded.length >0;
     }
 
 var CELLSIZE = 53;
 
 var BallLayer = cc.Layer.extend({
-    ball:null, 
+    //ball:null, 
     game:null,
 
     init:function(){
@@ -180,12 +196,13 @@ var BallLayer = cc.Layer.extend({
         this.game.init(this);
         this.setTouchEnabled(true);
 
-        this.ball = cc.Sprite.create(s_ball);
+        
         var size = cc.Director.getInstance().getWinSize();
        
-        this.ball.setAnchorPoint(cc.p(0.5, 0.5));
-        this.ball.setPosition(cc.p(size.width / 2, size.height / 2));
-        this.addChild(this.ball, 2);
+        // this.ball = cc.Sprite.create(s_ball);
+        // this.ball.setAnchorPoint(cc.p(0.5, 0.5));
+        // this.ball.setPosition(cc.p(size.width / 2, size.height / 2));
+        // this.addChild(this.ball, 2);
 
         var board = cc.Sprite.create(s_board);
         board.setAnchorPoint(cc.p(0.5, 0.5));
@@ -246,6 +263,13 @@ var BallLayer = cc.Layer.extend({
         chessNew.data = chessOld.data;
         chessOld.data = null;
         callback.call(this.game);
+    },
+
+    onHit:function(poses){
+        for (var i = 0; i < poses.length; i++) {
+            poses[i].data.removeFromParentAndCleanup();
+            poses[i].data = null;
+        };
     },
 
     //helper function
