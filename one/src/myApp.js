@@ -134,7 +134,7 @@ Game.prototype.calcResult = function(pnt){
 
         var hCnt = 0;
         var i = 0, j=0;
-        for(i = pnt.x-1; i > 0; --i){
+        for(i = pnt.x-1; i >= 0; --i){
             if (this.chesses[i][pnt.y].class != this.chesses[pnt.x][pnt.y].class) {
                 break;
             }
@@ -154,7 +154,7 @@ Game.prototype.calcResult = function(pnt){
 
         //验证竖直        
         hCnt = 0;
-        for(i = pnt.y -1; i>0; --i){
+        for(i = pnt.y -1; i>=0; --i){
             if (this.chesses[pnt.x][i].class != this.chesses[pnt.x][pnt.y].class) {
                 break;
             }
@@ -259,10 +259,15 @@ var BallLayer = cc.Layer.extend({
 
     onBeforeMoveChess:function(chessOld, chessNew, callback){        
         var action = cc.MoveTo.create(0.5, cc.p(chessNew.x*53 +26, chessNew.y*53+26));
-        chessOld.data.runAction(action);  
+
+        var game = this.game;  // for call
+        var actionCallback = cc.CallFunc.create(function(node){
+            callback.call(game);
+        });
+        chessOld.data.runAction(cc.Sequence.create(action, actionCallback));  
         chessNew.data = chessOld.data;
         chessOld.data = null;
-        callback.call(this.game);
+        
     },
 
     onHit:function(poses){
