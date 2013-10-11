@@ -44,14 +44,23 @@ function Game(){
     this.logic=null;
     this.state=null; 
     this.currentChessPos = null;
+    this.nextReadyChess = null;
     return this;
 }
 
 Game.prototype.init=function(logic){
         this.logic = logic;
-        this.genNextChess();
+        this.nextReadyChess = this.genRandomChess(); //用来显示3个下次出现的棋子
+        this.genNextChess();        
     }
 
+Game.prototype.genRandomChess = function(){
+    var arrResult = new Array;
+    for (var i = 0; i <3; i++) {
+        arrResult.push(Math.floor(Math.random()*this.CHESSCLASS+1));
+    }
+    return arrResult;
+}
 
 Game.prototype.genNextChess= function(){
         var poses = new Array;
@@ -66,9 +75,19 @@ Game.prototype.genNextChess= function(){
             this.unsetPos[idx] = this.unsetPos.pop();
         }
         for (var i = 0; i <3; i++) {
-            this.chesses[poses[i].x][poses[i].y].class =  Math.floor(Math.random()*this.CHESSCLASS+1);            
+            this.chesses[poses[i].x][poses[i].y].class = this.nextReadyChess[i];
         };
-        this.logic.afterGenChess(poses); 
+
+        
+            // var a = new Object;
+            // a.class = 1;
+            // a.x = 0;
+            // a.y = 0;       
+            // poses.push(a);
+        
+        
+        this.nextReadyChess = this.genRandomChess();
+        this.logic.afterGenChess(poses, this.nextReadyChess); 
     }
 
 //判断指定位置是否有棋子
@@ -188,9 +207,13 @@ var CELLSIZE = 53;
 var BallLayer = cc.Layer.extend({
     //ball:null, 
     game:null,
+    boardOffset:null,
 
     init:function(){
         this._super();
+        this.boardOffset = new Object;
+        this.boardOffset.x = 0;
+        this.boardOffset.y = 30;
 
         this.game = new Game;
         this.game.init(this);
@@ -205,8 +228,9 @@ var BallLayer = cc.Layer.extend({
         // this.addChild(this.ball, 2);
 
         var board = cc.Sprite.create(s_board);
-        board.setAnchorPoint(cc.p(0.5, 0.5));
-        board.setPosition(cc.p(size.width / 2, size.height / 2));
+        board.setAnchorPoint(cc.p(0.5, 0));
+        //board.setPosition(cc.p(size.width / 2, size.height / 2-this.boardOffset.y));
+        board.setPosition(cc.p(size.width / 2, this.boardOffset.y));
         this.addChild(board, 1);
     },
 
@@ -243,11 +267,12 @@ var BallLayer = cc.Layer.extend({
     },
 
     // logic interface
-    afterGenChess: function(poses){
+    afterGenChess: function(poses, nextClass){
         for (var i = 0; i < poses.length; i++) {
-            poses[i].data = cc.LabelTTF.create(""+poses[i].class, "Impact", 38);
+            poses[i].data = cc.LabelTTF.create(""+poses[i].class, "Impact", 30);
         // position the label on the center of the screen
-        poses[i].data.setPosition(cc.p(53* poses[i].x+26, 53* poses[i].y+26));
+        poses[i].data.setAnchorPoint(cc.p(0.5, 0.5));
+        poses[i].data.setPosition(cc.p(53* poses[i].x+26 + this.boardOffset.x, 53* poses[i].y+26 + this.boardOffset.y));
         // add the label as a child to this layer
         this.addChild(poses[i].data, 5);
         };
@@ -258,7 +283,7 @@ var BallLayer = cc.Layer.extend({
     },
 
     onBeforeMoveChess:function(chessOld, chessNew, callback){        
-        var action = cc.MoveTo.create(0.5, cc.p(chessNew.x*53 +26, chessNew.y*53+26));
+        var action = cc.MoveTo.create(0.5, cc.p(chessNew.x*53 +26, chessNew.y*53+26+this.boardOffset.y));
 
         var game = this.game;  // for call
         var actionCallback = cc.CallFunc.create(function(node){
@@ -280,8 +305,8 @@ var BallLayer = cc.Layer.extend({
     //helper function
     posToChessBoard: function(x, y){
         var boardPos = new Object;
-        boardPos.c = Math.floor(x / CELLSIZE);
-        boardPos.r = Math.floor(y / CELLSIZE);
+        boardPos.c = Math.floor((x-this.boardOffset.x) / CELLSIZE);
+        boardPos.r = Math.floor((y-this.boardOffset.y) / CELLSIZE);
         return boardPos;
     },
 
