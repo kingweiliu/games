@@ -195,6 +195,7 @@ Game.prototype.calcResult = function(pnt){
             //标示要消除的棋子
             for (var i = 0; i < arrFinded.length; i++) {
                 arrFinded[i].class = 0;
+                this.unsetPos.push(arrFinded[i]);
             };
             this.logic.onHit(arrFinded);  // 命中时回调logic的接口 
         };
@@ -208,6 +209,10 @@ var BallLayer = cc.Layer.extend({
     //ball:null, 
     game:null,
     boardOffset:null,
+    nextChessBkgOffset:null,
+    nextChesses:null,   //提示的sprite
+    score:0,         //得到的分数
+    scoreSprite:null,
 
     init:function(){
         this._super();
@@ -215,10 +220,23 @@ var BallLayer = cc.Layer.extend({
         this.boardOffset.x = 0;
         this.boardOffset.y = 30;
 
+        this.nextChessBkgOffset = new Object;
+        this.nextChessBkgOffset.x = 0;
+        this.nextChessBkgOffset.y = 30+485+15;
+
+        this.nextChesses = new Array;
+        for (var i = 0; i < 3; i++) {
+            this.nextChesses[i] = cc.LabelTTF.create("0", "Impact", 30);
+            // position the label on the center of the screen
+            this.nextChesses[i].setAnchorPoint(cc.p(0.5, 0.5));
+            this.nextChesses[i].setPosition(cc.p(CELLSIZE*i + 26 + this.nextChessBkgOffset.x, 26 + this.nextChessBkgOffset.y));
+            // add the label as a child to this layer
+            this.addChild(this.nextChesses[i], 5);            
+        }
+
         this.game = new Game;
         this.game.init(this);
         this.setTouchEnabled(true);
-
         
         var size = cc.Director.getInstance().getWinSize();
        
@@ -232,6 +250,17 @@ var BallLayer = cc.Layer.extend({
         //board.setPosition(cc.p(size.width / 2, size.height / 2-this.boardOffset.y));
         board.setPosition(cc.p(size.width / 2, this.boardOffset.y));
         this.addChild(board, 1);
+
+        //下一组 的背景
+        var nextChessBkg = cc.Sprite.create(s_nextBkg);
+        nextChessBkg.setAnchorPoint(cc.p(0,0));
+        nextChessBkg.setPosition(cc.p(this.nextChessBkgOffset.x, this.nextChessBkgOffset.y));
+        this.addChild(nextChessBkg, 1);
+
+        this.scoreSprite = cc.LabelTTF.create("0", "Impact", 30);
+        this.scoreSprite.setAnchorPoint(cc.p(1,0));
+        this.scoreSprite.setPosition(cc.p(480, this.nextChessBkgOffset.y));
+        this.addChild(this.scoreSprite, 1);
     },
 
     onTouchesMoved : function(pnt){
@@ -275,7 +304,11 @@ var BallLayer = cc.Layer.extend({
         poses[i].data.setPosition(cc.p(53* poses[i].x+26 + this.boardOffset.x, 53* poses[i].y+26 + this.boardOffset.y));
         // add the label as a child to this layer
         this.addChild(poses[i].data, 5);
-        };
+        }
+
+        for (var i = 0; i < 3 && i<nextClass.length; i++) {
+            this.nextChesses[i].setString(nextClass[i]);
+        }
     },
 
     onCurrentPosChanged:function(){
@@ -300,6 +333,8 @@ var BallLayer = cc.Layer.extend({
             poses[i].data.removeFromParentAndCleanup();
             poses[i].data = null;
         };
+        this.score += poses.length;
+        this.scoreSprite.setString(""+this.score);
     },
 
     //helper function
